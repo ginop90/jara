@@ -118,6 +118,36 @@
             margin-bottom: 15px;
             animation: fadeIn 0.3s ease;
             position: relative;
+            align-items: center; /* Añadir esta línea */
+        }
+        
+        .delete-item {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            padding: 0;
+            flex-shrink: 0; /* Añadir esta línea */
+        }
+        
+        .delete-item:hover {
+            background: #c0392b;
+            transform: scale(1.1);
+        }
+        
+        /* Ajustar el espaciado en item-row para el nuevo botón */
+        .item-row {
+            position: relative;
+            padding-right: 30px;
         }
 
         @keyframes fadeIn {

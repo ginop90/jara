@@ -35,6 +35,7 @@ function agregarItem() {
     newRow.innerHTML = `
         <input type="text" placeholder="Descripción del trabajo" class="trabajo" required>
         <input type="number" placeholder="Importe" class="importe" step="0.01" required min="0">
+        <button type="button" class="delete-item" onclick="eliminarItem(this)">×</button>
         <div class="error-message"></div>
     `;
     itemsList.appendChild(newRow);
@@ -50,12 +51,19 @@ function agregarItem() {
     });
 }
 
-function validarCampo(campo) {
-    if (!campo.value.trim()) {
-        mostrarError(campo, 'Este campo es requerido');
-        return false;
+function eliminarItem(button) {
+    const itemsList = document.getElementById('items-list');
+    const items = itemsList.querySelectorAll('.item-row');
+    
+    // Solo eliminar si hay más de un item
+    if (items.length > 1) {
+        const row = button.closest('.item-row');
+        row.remove();
+        calcularTotal();
+    } else {
+        // Opcional: mostrar un mensaje de que debe haber al menos un item
+        alert('Debe haber al menos un item en el presupuesto');
     }
-    return true;
 }
 
 function mostrarErroresEnContenedor(errores) {
@@ -183,13 +191,6 @@ function generarPDF() {
     doc.text('CARLOS HOMOLA', 20, 20);
     doc.setFontSize(16);
     doc.text('SERVICIOS INTEGRALES', 20, 30);
-    
-    // Logo
-    doc.setFillColor(41, 128, 185);
-    doc.circle(170, 20, 15, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text('CH', 165, 24);
     
     // Información del presupuesto
     doc.setTextColor(44, 62, 80);
