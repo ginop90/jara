@@ -34,7 +34,7 @@ function agregarItem() {
     newRow.className = 'item-row';
     newRow.innerHTML = `
         <input type="text" placeholder="Descripción del trabajo" class="trabajo" required>
-        <input type="number" placeholder="Importe" class="importe" step="0.01" required min="0">
+        <input type="text" placeholder="Importe" class="importe" required>
         <button type="button" class="delete-item" onclick="eliminarItem(this)">×</button>
         <div class="error-message"></div>
     `;
@@ -45,11 +45,22 @@ function agregarItem() {
     const importeInput = newRow.querySelector('.importe');
 
     trabajoInput.addEventListener('input', () => validarCampo(trabajoInput));
-    importeInput.addEventListener('input', () => {
-        validarCampo(importeInput);
+    importeInput.addEventListener('input', function() {
+        formatearImporte(this);
+        validarCampo(this);
         calcularTotal();
     });
 }
+
+// Agregar el listener al primer importe que viene en el HTML
+document.addEventListener('DOMContentLoaded', function() {
+    const primerImporte = document.querySelector('.importe');
+    primerImporte.addEventListener('input', function() {
+        formatearImporte(this);
+        validarCampo(this);
+        calcularTotal();
+    });
+});
 
 function eliminarItem(button) {
     const itemsList = document.getElementById('items-list');
@@ -156,9 +167,26 @@ function calcularTotal() {
     const importes = document.querySelectorAll('.importe');
     let total = 0;
     importes.forEach(importe => {
-        total += Number(importe.value) || 0;
+        total += Number(importe.value.replace(/\./g, '').replace(',', '.')) || 0;
     });
-    document.getElementById('total').textContent = total.toFixed(2);
+    document.getElementById('total').textContent = formatearNumero(total);
+}
+
+function formatearNumero(numero) {
+    return numero.toLocaleString('es-AR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
+// Función para formatear input de importe mientras se escribe
+function formatearImporte(input) {
+    let valor = input.value.replace(/\D/g, '');
+    valor = parseFloat(valor).toLocaleString('es-AR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+    input.value = valor;
 }
 
 document.addEventListener('keypress', function(e) {
@@ -180,6 +208,10 @@ document.querySelector('.importe').addEventListener('input', function() {
 function generarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    
+    // Obtener el nombre del cliente
+    const clienteInput = document.getElementById('cliente');
+    const nombreCliente = clienteInput ? clienteInput.value : 'Cliente';
     
     // Configuración de fuentes y colores
     doc.setFillColor(52, 152, 219);
@@ -206,7 +238,7 @@ function generarPDF() {
     doc.setFontSize(12);
     const fechaFormateada = formatearFecha(document.getElementById('fecha').value);
     doc.text(`Fecha: ${fechaFormateada}`, 20, 65);
-    doc.text(`Cliente: ${document.getElementById('cliente').value}`, 20, 75);
+    doc.text(`Cliente: ${nombreCliente}`, 20, 75);
     
     // Tabla de items
     let y = 90;
@@ -226,7 +258,7 @@ function generarPDF() {
                 doc.rect(20, y, 170, 10, 'F');
             }
             doc.text(trabajo, 25, y + 7);
-            doc.text(`$${Number(importe).toFixed(2)}`, 150, y + 7);
+            doc.text(`$${importe}`, 150, y + 7);
             y += 10;
         }
     });
@@ -244,22 +276,27 @@ function generarPDF() {
     doc.text('Carlos Homola', 20, y + 30);
     doc.text('San Rafael - 2604085532', 20, y + 35);
     
-    // Generar y descargar PDF
-    const pdfOutput = doc.output('blob');
-    const url = URL.createObjectURL(pdfOutput);
-    
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        const file = new File([pdfOutput], 'presupuesto.pdf', { type: 'application/pdf' });
-        if (navigator.share) {
-            navigator.share({
-                files: [file],
-                title: 'Presupuesto Carlos Homola'
-            });
+    try {
+        // Generar y descargar PDF
+        const pdfOutput = doc.output('blob');
+        const url = URL.createObjectURL(pdfOutput);
+        
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            const file = new File([pdfOutput], `Presupuesto ${nombreCliente}.pdf`, { type: 'application/pdf' });
+            if (navigator.share) {
+                navigator.share({
+                    files: [file],
+                    title: `Presupuesto ${nombreCliente}`
+                });
+            }
+        } else {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Presupuesto ${nombreCliente}.pdf`;
+            link.click();
         }
-    } else {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'presupuesto.pdf';
-        link.click();
+    } catch (error) {
+        console.error('Error al generar el PDF:', error);
+        alert('Hubo un error al generar el PDF. Por favor, intente nuevamente.');
     }
 }
