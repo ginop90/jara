@@ -28,51 +28,70 @@ function mostrarError(elemento, mensaje, duracion = 3000) {
     }, duracion);
 }
 
+// Función para agregar un nuevo item
 function agregarItem() {
     const itemsList = document.getElementById('items-list');
     const newRow = document.createElement('div');
     newRow.className = 'item-row';
     newRow.innerHTML = `
         <input type="text" placeholder="Descripción del trabajo" class="trabajo" required>
-        <input type="text" placeholder="Importe" class="importe" required>
-        <button type="button" class="delete-item" onclick="eliminarItem(this)">×</button>
+        <input type="number" placeholder="Importe" class="importe" step="0.01" required>
+        <button class="delete-item" onclick="eliminarItem(this)">×</button>
         <div class="error-message"></div>
     `;
     itemsList.appendChild(newRow);
 
-    // Agregar listeners para validación en tiempo real
-    const trabajoInput = newRow.querySelector('.trabajo');
+    // Agregar event listeners a los nuevos campos
     const importeInput = newRow.querySelector('.importe');
+    const trabajoInput = newRow.querySelector('.trabajo');
 
-    trabajoInput.addEventListener('input', () => validarCampo(trabajoInput));
     importeInput.addEventListener('input', function() {
-        formatearImporte(this);
         validarCampo(this);
         calcularTotal();
     });
-}
 
-// Agregar el listener al primer importe que viene en el HTML
-document.addEventListener('DOMContentLoaded', function() {
-    const primerImporte = document.querySelector('.importe');
-    primerImporte.addEventListener('input', function() {
-        formatearImporte(this);
+    importeInput.addEventListener('change', function() {
         validarCampo(this);
         calcularTotal();
     });
+
+    trabajoInput.addEventListener('input', () => 
+        validarCampo(trabajoInput)
+    );
+}
+// Event listeners iniciales
+document.addEventListener('DOMContentLoaded', function() {
+    // Event listener para el primer importe
+    const primerImporte = document.querySelector('.importe');
+    if (primerImporte) {
+        primerImporte.addEventListener('input', function() {
+            validarCampo(this);
+            calcularTotal();
+        });
+        primerImporte.addEventListener('change', function() {
+            validarCampo(this);
+            calcularTotal();
+        });
+    }
+
+    // Event listener para el primer trabajo
+    const primerTrabajo = document.querySelector('.trabajo');
+    if (primerTrabajo) {
+        primerTrabajo.addEventListener('input', function() {
+            validarCampo(this);
+        });
+    }
 });
 
-function eliminarItem(button) {
+// Función para eliminar item
+function eliminarItem(boton) {
     const itemsList = document.getElementById('items-list');
     const items = itemsList.querySelectorAll('.item-row');
     
-    // Solo eliminar si hay más de un item
     if (items.length > 1) {
-        const row = button.closest('.item-row');
-        row.remove();
+        boton.parentElement.remove();
         calcularTotal();
     } else {
-        // Opcional: mostrar un mensaje de que debe haber al menos un item
         alert('Debe haber al menos un item en el presupuesto');
     }
 }
@@ -167,21 +186,19 @@ function calcularTotal() {
     const importes = document.querySelectorAll('.importe');
     let total = 0;
     importes.forEach(importe => {
-        // Remover puntos y convertir comas en puntos para el cálculo
-        const valor = importe.value.replace(/\./g, '').replace(',', '');
-        const numero = parseFloat(valor);
-        if (!isNaN(numero)) {
-            total += numero;
-        }
+        const valor = parseFloat(importe.value) || 0;
+        total += valor;
     });
-    document.getElementById('total').textContent = formatearNumero(total);
+    // Agregar el signo $ al mostrar el total
+    document.getElementById('total').textContent = '$ ' + formatearNumero(total);
 }
 
+// Función para formatear números con el formato deseado
 function formatearNumero(numero) {
-    return numero.toLocaleString('es-AR', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    });
+    return new Intl.NumberFormat('es-AR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(numero);
 }
 
 // Función para formatear input de importe mientras se escribe
@@ -266,34 +283,56 @@ function generarPDF() {
     doc.text(`Cliente: ${nombreCliente}`, 20, 75);
     
     // Tabla de items
-    let y = 90;
-    doc.setFillColor(241, 196, 15);
-    doc.rect(20, y - 10, 170, 10, 'F');
-    doc.setTextColor(0, 0, 0);
-    doc.text('DESCRIPCIÓN', 25, y - 2);
-    doc.text('IMPORTE', 150, y - 2);
+let y = 90;
+doc.setFillColor(241, 196, 15);
+doc.rect(20, y - 10, 170, 10, 'F');
+doc.setTextColor(0, 0, 0);
+doc.text('DESCRIPCIÓN', 25, y - 2);
+doc.text('IMPORTE', 150, y - 2);
+
+const items = document.querySelectorAll('.item-row');
+items.forEach((item, index) => {
+    const trabajo = item.querySelector('.trabajo').value;
+    const importe = Number(item.querySelector('.importe').value);
     
-    const items = document.querySelectorAll('.item-row');
-    items.forEach((item, index) => {
-        const trabajo = item.querySelector('.trabajo').value;
-        const importe = item.querySelector('.importe').value;
-        if (trabajo && importe) {
-            if (index % 2 === 0) {
-                doc.setFillColor(245, 245, 245);
-                doc.rect(20, y, 170, 10, 'F');
-            }
-            doc.text(trabajo, 25, y + 7);
-            doc.text(`$${importe}`, 150, y + 7);
-            y += 10;
+    if (trabajo && importe) {
+        if (index % 2 === 0) {
+            doc.setFillColor(245, 245, 245);
+            doc.rect(20, y, 170, 10, 'F');
         }
-    });
+        
+        // Dividir el texto largo en múltiples líneas
+        const maxWidth = 120; // Ancho máximo para la descripción
+        const splitText = doc.splitTextToSize(trabajo, maxWidth);
+        
+        // Calcular altura necesaria basada en número de líneas
+        const lineHeight = 7;
+        const textHeight = splitText.length * lineHeight;
+        
+        // Ajustar el rectángulo de fondo si es necesario
+        if (splitText.length > 1) {
+            if (index % 2 === 0) {
+                doc.rect(20, y, 170, textHeight + 3, 'F');
+            }
+        }
+        
+        // Dibujar el texto dividido
+        doc.text(splitText, 25, y + 7);
+        doc.text(`$ ${formatearNumero(importe)}`, 150, y + 7);
+        
+        // Ajustar la posición Y basada en la altura del texto
+        y += Math.max(10, textHeight + 3);
+    }
+});
     
     // Total
     doc.setFillColor(52, 152, 219);
     doc.rect(20, y + 5, 170, 12, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
-    doc.text(`TOTAL: $${document.getElementById('total').textContent}`, 25, y + 13);
+    // Aquí está el segundo cambio:
+    const totalText = document.getElementById('total').textContent;
+    doc.text(`TOTAL: ${totalText}`, 25, y + 13);
     
     // Pie de página
     doc.setTextColor(128, 128, 128);
