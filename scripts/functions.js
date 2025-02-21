@@ -282,48 +282,45 @@ function generarPDF() {
     doc.text(`Fecha: ${fechaFormateada}`, 20, 65);
     doc.text(`Cliente: ${nombreCliente}`, 20, 75);
     
-    // Tabla de items
-let y = 90;
-doc.setFillColor(241, 196, 15);
-doc.rect(20, y - 10, 170, 10, 'F');
-doc.setTextColor(0, 0, 0);
-doc.text('DESCRIPCIÓN', 25, y - 2);
-doc.text('IMPORTE', 150, y - 2);
 
-const items = document.querySelectorAll('.item-row');
-items.forEach((item, index) => {
-    const trabajo = item.querySelector('.trabajo').value;
-    const importe = Number(item.querySelector('.importe').value);
+    // Tabla de items
+    let y = 90;
+    doc.setFillColor(241, 196, 15);
+    doc.rect(20, y - 10, 170, 10, 'F');
+    doc.setTextColor(0, 0, 0);
+    doc.text('DESCRIPCIÓN', 25, y - 2);
+    doc.text('IMPORTE', 150, y - 2);
     
-    if (trabajo && importe) {
-        if (index % 2 === 0) {
-            doc.setFillColor(245, 245, 245);
-            doc.rect(20, y, 170, 10, 'F');
-        }
+    const items = document.querySelectorAll('.item-row');
+    items.forEach((item, index) => {
+        const trabajo = item.querySelector('.trabajo').value;
+        const importe = Number(item.querySelector('.importe').value);
         
-        // Dividir el texto largo en múltiples líneas
-        const maxWidth = 120; // Ancho máximo para la descripción
-        const splitText = doc.splitTextToSize(trabajo, maxWidth);
-        
-        // Calcular altura necesaria basada en número de líneas
-        const lineHeight = 7;
-        const textHeight = splitText.length * lineHeight;
-        
-        // Ajustar el rectángulo de fondo si es necesario
-        if (splitText.length > 1) {
+        if (trabajo && importe) {
+            // Definir un ancho máximo más restrictivo para el texto
+            const maxWidth = 100; // Reducido de 120 a 100 para móviles
+            
+            // Dividir el texto en múltiples líneas
+            const splitText = doc.splitTextToSize(trabajo, maxWidth);
+            
+            // Calcular la altura necesaria
+            const lineHeight = 7;
+            const textHeight = splitText.length * lineHeight;
+            
+            // Dibujar el fondo alternado
             if (index % 2 === 0) {
-                doc.rect(20, y, 170, textHeight + 3, 'F');
+                doc.setFillColor(245, 245, 245);
+                doc.rect(20, y, 170, Math.max(10, textHeight + 3), 'F');
             }
+            
+            // Dibujar el texto y el importe
+            doc.text(splitText, 25, y + 7);
+            doc.text(`$ ${formatearNumero(importe)}`, 150, y + 7);
+            
+            // Ajustar la posición Y para el siguiente item
+            y += Math.max(10, textHeight + 3);
         }
-        
-        // Dibujar el texto dividido
-        doc.text(splitText, 25, y + 7);
-        doc.text(`$ ${formatearNumero(importe)}`, 150, y + 7);
-        
-        // Ajustar la posición Y basada en la altura del texto
-        y += Math.max(10, textHeight + 3);
-    }
-});
+    });
     
     // Total
     doc.setFillColor(52, 152, 219);
