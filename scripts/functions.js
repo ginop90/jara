@@ -297,31 +297,33 @@ function generarPDF() {
         const importe = Number(item.querySelector('.importe').value);
         
         if (trabajo && importe) {
-            // Definir un ancho máximo más restrictivo para el texto
-            const maxWidth = 100; // Reducido de 120 a 100 para móviles
+            // Configura un ancho más restrictivo y asegura que splitTextToSize funcione
+            const maxWidth = 90; // Ancho más restrictivo
+            doc.setFontSize(12); // Aseguramos un tamaño de fuente consistente
             
-            // Dividir el texto en múltiples líneas
-            const splitText = doc.splitTextToSize(trabajo, maxWidth);
+            // Forzar el split del texto
+            let lines = doc.splitTextToSize(trabajo, maxWidth);
             
             // Calcular la altura necesaria
             const lineHeight = 7;
-            const textHeight = splitText.length * lineHeight;
+            const textHeight = lines.length * lineHeight;
+            const rowHeight = Math.max(10, textHeight);
             
-            // Dibujar el fondo alternado
+            // Dibujar el fondo
             if (index % 2 === 0) {
                 doc.setFillColor(245, 245, 245);
-                doc.rect(20, y, 170, Math.max(10, textHeight + 3), 'F');
+                doc.rect(20, y, 170, rowHeight, 'F');
             }
             
             // Dibujar el texto y el importe
-            doc.text(splitText, 25, y + 7);
-            doc.text(`$ ${formatearNumero(importe)}`, 150, y + 7);
+            doc.text(lines, 25, y + 7);
+            doc.text(`$ ${formatearNumero(importe)}`, 150, y + (rowHeight/2)); // Centrar el importe verticalmente
             
-            // Ajustar la posición Y para el siguiente item
-            y += Math.max(10, textHeight + 3);
+            // Actualizar la posición Y
+            y += rowHeight;
         }
-    });
-    
+    });    
+        
     // Total
     doc.setFillColor(52, 152, 219);
     doc.rect(20, y + 5, 170, 12, 'F');
