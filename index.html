@@ -3,62 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carlos Homola - Servicios Integrales</title>
-    <link rel="stylesheet" href="css/styles.css">  
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>   
-<head>
-
-    
+    <title>Jara DJ's, Sonido e Iluminación</title>
+    <script src="scripts/functions.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <header>
-        <div class="header-text">
-            <h1>Carlos Homola</h1>
-            <h2>Servicios Integrales</h2>
-        </div>
-        <div class="logo">
-            <img src="images/logo.png" alt="Logo Carlos Homola">
-        </div>
-    </header>
-
-    <div class="form-container">
-        <div class="form-group">
-            <label for="fecha">Fecha:</label>
-            <input type="date" id="fecha" required>
-        </div>
-
-        <div class="form-group">
-            <label for="cliente">Cliente:</label>
-            <input type="text" id="cliente" placeholder="Nombre del cliente" required>
-            <div class="error-message">Por favor, ingrese el nombre del cliente</div>
+    <div class="container">
+        <!-- Página principal -->
+        <div id="home-page">
+            <header>
+                <div class="logo">
+                    <img src="images/logo_nuevo.png" alt="Jara DJ's Logo">
+                </div>
+                <h1>Jara DJ's, Sonido e Iluminación</h1>
+            </header>
+            
+            <div class="main-options">
+                <button class="option-btn" onclick="showPage('presupuesto-page')">
+                    <span class="emoji">📝</span> Presupuestos
+                </button>
+                <button class="option-btn" onclick="showPage('recibo-page')">
+                    <span class="emoji">🧾</span> Recibos
+                </button>
+            </div>
         </div>
 
-        <div class="items-container">
-            <label>Trabajos Realizados:</label>
-            <div id="items-list">
-                <div id="items-list">
-                    <div class="item-row">
-                        <input type="text" placeholder="Descripción del trabajo" class="trabajo" required>
-                        <input type="text" placeholder="Importe" class="importe" required>
-                        <button type="button" class="delete-item" onclick="eliminarItem(this)">×</button>
-                        <div class="error-message">Por favor, complete todos los campos</div>
+        <!-- Página de Presupuestos -->
+        <div id="presupuesto-page" class="hidden">
+            <button class="back-btn" onclick="showPage('home-page')">
+                ← Volver
+            </button>
+            
+            <h1>Generar Presupuesto <span class="emoji">📝</span></h1>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="presupuesto-fecha">Fecha:</label>
+                    <input type="date" id="presupuesto-fecha" name="fecha">
+                </div>
+                
+                <div class="form-group">
+                    <label for="presupuesto-salon">Salón:</label>
+                    <input type="text" id="presupuesto-salon" name="salon" placeholder="Nombre del salón">
+                </div>
+                
+                <div class="form-group">
+                    <label for="presupuesto-evento">Tipo de Evento:</label>
+                    <input type="text" id="presupuesto-evento" name="evento" placeholder="Ej: Casamiento, Fiesta de 15, etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label for="presupuesto-cliente">Cliente:</label>
+                    <input type="text" id="presupuesto-cliente" name="cliente" placeholder="Nombre del cliente">
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="presupuesto-detalles">Detalles:</label>
+                    <textarea id="presupuesto-detalles" name="detalles" rows="4" placeholder="Descripción de equipos y servicios..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="presupuesto-importe">Importe:</label>
+                    <div class="amount-input">
+                        <input type="number" id="presupuesto-importe" name="importe" placeholder="0" min="0" oninput="calcularTotalPresupuesto()">
                     </div>
                 </div>
             </div>
-            <button class="add-item" onclick="agregarItem()">+ Agregar item</button>
+            
+            <div class="form-section">
+                <h3>Extras</h3>
+                <div id="extras-container">
+                    <!-- Los extras se agregarán aquí dinámicamente -->
+                </div>
+                
+                <button type="button" class="btn-add-extra" onclick="agregarExtra()">+</button>
+            </div>
+            
+            <div class="total-section">
+                <span class="total-label">TOTAL:</span>
+                <span class="total-amount" id="presupuesto-total">$0</span>
+            </div>
+            
+            <button class="action-btn" onclick="generarPDFPresupuesto()">
+                Generar PDF <span class="emoji">📄</span>
+            </button>
         </div>
 
-        <div class="total">
-            Total: <span id="total">0.00</span>
+        <!-- Página de Recibos -->
+        <div id="recibo-page" class="hidden">
+            <button class="back-btn" onclick="showPage('home-page')">
+                ← Volver
+            </button>
+            
+            <h1>Generar Recibo <span class="emoji">🧾</span></h1>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="recibo-fecha">Fecha:</label>
+                    <input type="date" id="recibo-fecha" name="fecha">
+                </div>
+                
+                <div class="form-group">
+                    <label for="recibo-salon">Salón:</label>
+                    <input type="text" id="recibo-salon" name="salon" placeholder="Nombre del salón">
+                </div>
+                
+                <div class="form-group">
+                    <label for="recibo-evento">Tipo de Evento:</label>
+                    <input type="text" id="recibo-evento" name="evento" placeholder="Ej: Casamiento, Fiesta de 15, etc.">
+                </div>
+                
+                <div class="form-group">
+                    <label for="recibo-cliente">Cliente:</label>
+                    <input type="text" id="recibo-cliente" name="cliente" placeholder="Nombre del cliente">
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="recibo-detalle">Detalle:</label>
+                    <textarea id="recibo-detalle" name="detalle" rows="2" placeholder="Descripción del servicio..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="recibo-importe">Importe Recibido:</label>
+                    <div class="amount-input">
+                        <input type="number" id="recibo-importe" name="importe" placeholder="0" min="0">
+                    </div>
+                </div>
+            </div>
+            
+            <button class="action-btn" onclick="generarPDFRecibo()">
+                Generar PDF <span class="emoji">📄</span>
+            </button>
         </div>
-
-        <div class="error-container">
-            <ul class="error-list"></ul>
-        </div>    
-
-        <button class="generate-pdf" onclick="validarYGenerarPDF()">Generar Presupuesto PDF</button>
+        
+        <!-- Contenido para PDF Presupuesto -->
+        <div id="pdf-presupuesto" class="pdf-content">
+            <div class="pdf-header">
+                <div class="pdf-banner"></div>
+                <div class="pdf-logo"></div>
+            </div>
+            <div class="pdf-title">PRESUPUESTO</div>
+            <div class="pdf-body">
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Fecha:</div>
+                    <div class="pdf-row-value" id="pdf-presupuesto-fecha"></div>
+                </div>
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Salón:</div>
+                    <div class="pdf-row-value" id="pdf-presupuesto-salon"></div>
+                </div>
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Evento:</div>
+                    <div class="pdf-row-value" id="pdf-presupuesto-evento"></div>
+                </div>
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Cliente:</div>
+                    <div class="pdf-row-value" id="pdf-presupuesto-cliente"></div>
+                </div>
+                <hr>
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Detalles:</div>
+                </div>
+                <div class="pdf-detail" id="pdf-presupuesto-detalles"></div>
+                <div class="pdf-row">
+                    <div style="width: 70%; text-align: left;">Importe:</div>
+                    <div style="width: 30%; text-align: right;"><span id="pdf-presupuesto-importe"></span></div>
+                </div>
+                <div id="pdf-extras-container">
+                    <!-- Los extras se agregarán aquí dinámicamente -->
+                </div>
+                <div class="pdf-total">
+                    TOTAL: <span id="pdf-presupuesto-total"></span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido para PDF Recibo -->
+        <div id="pdf-recibo" class="pdf-content">
+            <div class="pdf-header">
+                <div class="pdf-banner"></div>
+                <div class="pdf-logo"></div>
+            </div>
+            <div class="pdf-title">RECIBO</div>
+            <div class="pdf-body">
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Fecha:</div>
+                    <div class="pdf-row-value" id="pdf-recibo-fecha"></div>
+                </div>
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Salón:</div>
+                    <div class="pdf-row-value" id="pdf-recibo-salon"></div>
+                </div>
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Evento:</div>
+                    <div class="pdf-row-value" id="pdf-recibo-evento"></div>
+                </div>
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Cliente:</div>
+                    <div class="pdf-row-value" id="pdf-recibo-cliente"></div>
+                </div>
+                <hr>
+                <div class="pdf-row">
+                    <div class="pdf-row-label">Detalle:</div>
+                </div>
+                <div class="pdf-detail" id="pdf-recibo-detalle"></div>
+                <div class="pdf-total">
+                    TOTAL RECIBIDO: <span id="pdf-recibo-importe"></span>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <script src="scripts/functions.js"></script> 
 </body>
 </html>
