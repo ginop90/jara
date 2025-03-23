@@ -160,6 +160,7 @@ function generarPDFRecibo() {
 
 // Función para generar PDF usando html2canvas y jsPDF
 // Función optimizada para generar PDF
+// Función optimizada para generar PDF
 function generatePDF(elementId, filename) {
     const { jsPDF } = window.jspdf;
     
@@ -167,19 +168,32 @@ function generatePDF(elementId, filename) {
     const element = document.getElementById(elementId);
     element.style.display = 'block';
     
+    // Determinar escala óptima basada en el dispositivo
+    const scale = isMobile() ? 1.5 : 2;
+    
     // Crear PDF
     html2canvas(element, { 
-        scale: 2,
+        scale: scale,
         backgroundColor: '#000000',
         useCORS: true,
         allowTaint: true,
+        logging: false, // Desactivar logs para mejor rendimiento
         // Solo capturar el elemento exacto
         onclone: function(clonedDoc) {
             const clonedElement = clonedDoc.getElementById(elementId);
-            // Asegurarse que el contenedor tiene altura adecuada pero no excesiva
+            // Asegurarse que el contenedor tiene altura adecuada
             clonedElement.style.height = 'auto';
+            clonedElement.style.width = '100%';
+            clonedElement.style.maxWidth = '100%';
             // Eliminar cualquier padding excesivo
             clonedElement.style.paddingBottom = '0';
+            clonedElement.style.margin = '0';
+            
+            // Asegurar que todos los elementos internos sean visibles
+            const allElements = clonedElement.querySelectorAll('*');
+            allElements.forEach(el => {
+                el.style.overflow = 'visible';
+            });
         }
     }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
@@ -190,20 +204,33 @@ function generatePDF(elementId, filename) {
         // Calcular proporciones para mantener aspecto original
         const pdfWidth = 210; // Ancho de A4
         const pdfHeight = 297; // Alto de A4
-        const imgWidth = pdfWidth;
-        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        // Calcular tamaño de imagen ajustado al PDF con margen
+        const margin = 10; // 10mm de margen
+        const imgWidth = pdfWidth - (margin * 2);
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
         // Rellenar la página con negro
         pdf.setFillColor(0, 0, 0);
         pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
         
-        // Añadir la imagen centrada
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        // Añadir la imagen centrada con margen
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
         
-        // No agregar páginas adicionales si el contenido cabe en una página
-        if (imgHeight > pdfHeight) {
-            // Recortar para que no se generen páginas adicionales
-            console.log("El contenido es más grande que una página A4, pero se ajustará a una sola página");
+        // Manejar contenido que excede la página
+        if (imgHeight > (pdfHeight - margin * 2)) {
+            console.log("Ajustando contenido a la página...");
+            // Reducir imagen para que quepa en una página con márgenes
+            const aspectRatio = canvas.width / canvas.height;
+            const newHeight = pdfHeight - (margin * 2);
+            const newWidth = newHeight * aspectRatio;
+            
+            // Limpiar la página
+            pdf.setFillColor(0, 0, 0);
+            pdf.rect(0, 0, pdfWidth, pdfHeight, 'F');
+            
+            // Añadir imagen reescalada
+            pdf.addImage(imgData, 'PNG', (pdfWidth - newWidth) / 2, margin, newWidth, newHeight);
         }
         
         pdf.save(`${filename}.pdf`);
@@ -225,6 +252,10 @@ function generatePDF(elementId, filename) {
                 });
             }
         }
+    }).catch(error => {
+        console.error('Error al generar PDF:', error);
+        alert('Hubo un problema al generar el PDF. Intente nuevamente.');
+        element.style.display = 'none';
     });
 }
 
